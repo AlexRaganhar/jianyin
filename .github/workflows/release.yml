@@ -1,4 +1,4 @@
-﻿name: Release
+name: Release
 
 on:
   push:
@@ -86,7 +86,9 @@ jobs:
       # _tkinter on macOS, so use Homebrew Python plus the python-tk formula.
       - name: Install Python with Tk
         run: |
-          brew install python@3.12 python-tk@3.12
+          # `brew link` can fail when the runner image already ships python@3.12;
+          # the absolute keg path below is used, so a link conflict is harmless.
+          brew install python@3.12 python-tk@3.12 || true
           "$(brew --prefix python@3.12)/bin/python3.12" -c "import tkinter; print('tk', tkinter.TkVersion)"
 
       - name: Create virtualenv
