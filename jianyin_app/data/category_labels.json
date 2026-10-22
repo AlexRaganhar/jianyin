@@ -1,0 +1,42 @@
+{
+  "account_number": {
+    "label": "账号 / 证件号",
+    "color": "#B05A3C"
+  },
+  "private_address": {
+    "label": "地址",
+    "color": "#8C6A2F"
+  },
+  "private_date": {
+    "label": "日期",
+    "color": "#7A6B4F"
+  },
+  "private_email": {
+    "label": "邮箱",
+    "color": "#3E6B7A"
+  },
+  "private_person": {
+    "label": "姓名",
+    "color": "#A8443A"
+  },
+  "private_phone": {
+    "label": "电话",
+    "color": "#4D6B52"
+  },
+  "private_url": {
+    "label": "链接",
+    "color": "#4C5D7A"
+  },
+  "secret": {
+    "label": "密钥 / 密码",
+    "color": "#7A3E4A"
+  },
+  "organization": {
+    "label": "单位 / 公司",
+    "color": "#6B5A3E"
+  },
+  "other": {
+    "label": "其他敏感信息",
+    "color": "#5B5B5B"
+  }
+}

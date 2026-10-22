@@ -1,0 +1,16 @@
+* text=auto
+
+# The launcher is GBK-encoded for Chinese Windows CMD; never normalize it.
+*.cmd -text
+# PowerShell scripts carry a UTF-8 BOM for Windows PowerShell 5.1.
+*.ps1 -text
+
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+*.ico binary
+*.png binary

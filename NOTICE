@@ -1,0 +1,14 @@
+笺隐（JianYin）
+Copyright 2026 JianYin contributors
+
+This product uses the OpenAI Privacy Filter model.
+
+OpenAI Privacy Filter
+- Source: https://github.com/openai/privacy-filter
+- Model: https://huggingface.co/openai/privacy-filter
+- License: Apache License 2.0
+- Fixed revision: 7ffa9a043d54d1be65afb281eddf0ffbe629385b
+- Model card: https://cdn.openai.com/pdf/c66281ed-b638-456a-8ce1-97e9f5264a90/OpenAI-Privacy-Filter-Model-Card.pdf
+
+OpenAI and OpenAI Privacy Filter are names/trademarks of OpenAI. 笺隐 is an
+independent local tool and is not an official OpenAI product.

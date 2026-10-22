@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "name": "chinese-pii-supplement",
+  "description": "本地中文敏感信息补强规则。模型主要基于英文训练，这些规则用于提高中文证件号、手机号、银行卡号和姓名线索的召回。",
+  "rules": {
+    "cn_id": {
+      "label": "身份证号",
+      "category": "account_number",
+      "subtype": "cn_id",
+      "priority": 80,
+      "default_enabled": true
+    },
+    "cn_mobile": {
+      "label": "手机号",
+      "category": "private_phone",
+      "subtype": "cn_mobile",
+      "priority": 80,
+      "default_enabled": true
+    },
+    "cn_bank_card": {
+      "label": "银行卡号",
+      "category": "account_number",
+      "subtype": "cn_bank_card",
+      "priority": 80,
+      "default_enabled": true
+    },
+    "cn_name_context": {
+      "label": "姓名线索",
+      "category": "private_person",
+      "subtype": "cn_name",
+      "priority": 40,
+      "default_enabled": true
+    },
+    "cn_landline": {
+      "label": "座机号",
+      "category": "private_phone",
+      "subtype": "cn_landline",
+      "priority": 70,
+      "default_enabled": false
+    },
+    "cn_date": {
+      "label": "中文日期",
+      "category": "private_date",
+      "subtype": "cn_date",
+      "priority": 30,
+      "default_enabled": false
+    },
+    "cn_address": {
+      "label": "中文地址",
+      "category": "private_address",
+      "subtype": "cn_address",
+      "priority": 30,
+      "default_enabled": false
+    }
+  }
+}

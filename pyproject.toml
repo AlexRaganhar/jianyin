@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jianyin-app"
+version = "0.1.0"
+description = "笺隐：本地、可审阅、可还原的案件文档脱敏工作台。"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "JianYin contributors" }]
+dependencies = [
+  "huggingface_hub>=0.24",
+  "numpy>=1.26",
+  "onnxruntime>=1.20",
+  "pypdf>=5.0",
+  "python-docx>=1.1",
+  "tokenizers>=0.20",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "ruff>=0.6",
+]
+
+[project.scripts]
+jianyin = "jianyin_app.cli:main"
+jianyin-gui = "jianyin_app.gui.app:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["jianyin_app*"]
+exclude = ["models*", "tests*", "scripts*", "docs*"]
+
+[tool.setuptools.package-data]
+jianyin_app = ["data/*.json", "data/*.txt", "assets/*.ico", "assets/*.png"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+  "slow: tests that load the real ONNX model",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "B"]
+ignore = ["E501"]

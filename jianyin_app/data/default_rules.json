@@ -1,0 +1,59 @@
+{
+  "schema_version": 2,
+  "name": "default-safe-redaction",
+  "review_required": true,
+  "default": {
+    "strategy": "placeholder",
+    "placeholder": "[敏感信息{n}]"
+  },
+  "categories": {
+    "account_number": {
+      "strategy": "mask_middle",
+      "keep_start": 3,
+      "keep_end": 3,
+      "mask_char": "*"
+    },
+    "private_address": {
+      "strategy": "placeholder",
+      "placeholder": "[地址{n}]"
+    },
+    "private_date": {
+      "strategy": "placeholder",
+      "placeholder": "[日期{n}]"
+    },
+    "private_email": {
+      "strategy": "mask_middle",
+      "keep_start": 3,
+      "keep_end": 3,
+      "mask_char": "*"
+    },
+    "private_person": {
+      "strategy": "person_alias",
+      "chinese_suffix": "某",
+      "collision_suffix": true,
+      "fallback_template": "[姓名{n}]"
+    },
+    "private_phone": {
+      "strategy": "mask_middle",
+      "keep_start": 3,
+      "keep_end": 3,
+      "mask_char": "*"
+    },
+    "private_url": {
+      "strategy": "placeholder",
+      "placeholder": "[链接{n}]"
+    },
+    "secret": {
+      "strategy": "placeholder",
+      "placeholder": "[密钥{n}]"
+    },
+    "organization": {
+      "strategy": "placeholder",
+      "placeholder": "[单位{n}]"
+    },
+    "other": {
+      "strategy": "placeholder",
+      "placeholder": "[敏感信息{n}]"
+    }
+  }
+}
