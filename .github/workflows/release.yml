@@ -59,6 +59,9 @@ jobs:
           $version = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME -replace '^v', '' } else { '0.0.0-dev' }
           "JIANYIN_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           Compress-Archive -Path dist/JianYin.exe -DestinationPath "JianYin-$version-windows-x64.zip" -Force
+          # Keep every artifact at the workspace root so the release job can
+          # checksum a flat directory (nested paths would recreate dist/dist).
+          Copy-Item dist/JianYin.exe "JianYin-$version-windows-x64.exe"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -66,7 +69,7 @@ jobs:
           if-no-files-found: error
           path: |
             JianYin-*-windows-x64.zip
-            dist/JianYin.exe
+            JianYin-*-windows-x64.exe
 
   macos:
     name: macOS ${{ matrix.arch }}
@@ -138,8 +141,9 @@ jobs:
       - name: Generate checksums
         run: |
           cd dist
+          find . -maxdepth 1 -type d -name dist -exec rm -rf {} +
           rm -f SHA256SUMS.txt
-          sha256sum * > SHA256SUMS.txt
+          find . -maxdepth 1 -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
       - name: Create GitHub Release
