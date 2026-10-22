@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable
@@ -42,10 +43,16 @@ def project_root() -> Path:
 
 
 def _local_app_data() -> Path:
+    """Return the per-user application data root for the current platform."""
     configured = os.environ.get("LOCALAPPDATA")
     if configured:
         return Path(configured)
-    return Path.home() / "AppData" / "Local"
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support"
+    if sys.platform == "win32":
+        return Path.home() / "AppData" / "Local"
+    xdg = os.environ.get("XDG_DATA_HOME")
+    return Path(xdg) if xdg else Path.home() / ".local" / "share"
 
 
 def default_model_directory() -> Path:

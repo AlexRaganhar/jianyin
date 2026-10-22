@@ -1,0 +1,161 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.12"
+  PYINSTALLER_SPEC: "pyinstaller>=6.11,<7"
+
+jobs:
+  windows:
+    name: Windows x64
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]" "${{ env.PYINSTALLER_SPEC }}"
+
+      - name: Tests
+        run: python -m pytest -q -m "not slow"
+
+      - name: Build standalone executable
+        run: python scripts/build_release.py
+
+      - name: Verify frozen bundle
+        shell: pwsh
+        run: |
+          # The GUI binary is a Windows-subsystem executable: PowerShell will not
+          # wait for it, so start it explicitly and inspect the exit code.
+          $process = Start-Process -FilePath .\dist\JianYin.exe -ArgumentList '--self-check' -PassThru
+          if (-not $process.WaitForExit(180000)) {
+            Stop-Process -Id $process.Id -Force
+            throw 'self-check timed out'
+          }
+          if ($process.ExitCode -ne 0) { throw "self-check failed with exit code $($process.ExitCode)" }
+          Write-Host 'frozen bundle self-check passed'
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $version = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME -replace '^v', '' } else { '0.0.0-dev' }
+          "JIANYIN_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Compress-Archive -Path dist/JianYin.exe -DestinationPath "JianYin-$version-windows-x64.zip" -Force
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          if-no-files-found: error
+          path: |
+            JianYin-*-windows-x64.zip
+            dist/JianYin.exe
+
+  macos:
+    name: macOS ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-14
+          - arch: x64
+            runner: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+
+      # The python.org builds shipped by setup-python do not reliably include
+      # _tkinter on macOS, so use Homebrew Python plus the python-tk formula.
+      - name: Install Python with Tk
+        run: |
+          brew install python@3.12 python-tk@3.12
+          "$(brew --prefix python@3.12)/bin/python3.12" -c "import tkinter; print('tk', tkinter.TkVersion)"
+
+      - name: Create virtualenv
+        run: |
+          BREW_PY="$(brew --prefix python@3.12)/bin/python3.12"
+          "$BREW_PY" -m venv --system-site-packages .venv
+          .venv/bin/python -m pip install --upgrade pip
+
+      - name: Install dependencies
+        run: |
+          .venv/bin/python -m pip install -e ".[dev]" "${{ env.PYINSTALLER_SPEC }}"
+
+      - name: Tests
+        run: .venv/bin/python -m pytest -q -m "not slow"
+
+      - name: Build standalone app
+        run: .venv/bin/python scripts/build_release.py
+
+      - name: Verify frozen bundle
+        run: |
+          "dist/JianYin.app/Contents/MacOS/JianYin" --self-check
+
+      - name: Package
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          [ "$GITHUB_REF_TYPE" = "tag" ] || VERSION="0.0.0-dev"
+          echo "JIANYIN_VERSION=$VERSION" >> "$GITHUB_ENV"
+          ditto -c -k --sequesterRsrc --keepParent "dist/JianYin.app" "JianYin-$VERSION-macos-${{ matrix.arch }}.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.arch }}
+          if-no-files-found: error
+          path: JianYin-*-macos-${{ matrix.arch }}.zip
+
+  release:
+    name: Publish release
+    needs: [windows, macos]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Generate checksums
+        run: |
+          cd dist
+          rm -f SHA256SUMS.txt
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          append_body: true
+          body: |
+            ## 安装说明
+
+            **Windows**：解压 `JianYin-*-windows-x64.zip`，双击 `JianYin.exe` 运行（无需安装 Python）。
+
+            **macOS**：解压后把 `JianYin.app` 拖进「应用程序」。本次构建没有 Apple 开发者签名，首次打开需右键 →「打开」，
+            或在终端执行 `xattr -cr /Applications/JianYin.app` 解除隔离。
+
+            **首次使用**：程序会自动从 Hugging Face 下载约 945 MB 的 Q4 ONNX 模型到用户数据目录；
+            也可以设置环境变量 `JIANYIN_MODEL_DIR` 指向已有的完整模型目录，实现完全离线运行。
+
+            校验下载文件：`sha256sum -c SHA256SUMS.txt`（Windows 用 `Get-FileHash` 对照）。
