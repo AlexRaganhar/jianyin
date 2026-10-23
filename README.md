@@ -29,7 +29,7 @@
 
 ## 2. 安装
 
-要求：Windows 10/11、Python 3.12、约 1 GB 磁盘用于模型。
+要求：Windows 10/11 或 macOS 12+、Python 3.12、约 1 GB 磁盘用于模型。
 
 ```powershell
 git clone https://github.com/AlexRaganhar/jianyin.git
@@ -59,24 +59,32 @@ py -3.12 -m venv .venv
 
 如果你已经有完整 Q4 目录，也可以直接复制到项目的 `models\openai-privacy-filter-q4\`，或用 `--model-dir` 指向它。
 
-### Windows 含模型便携版
+### Windows 安装包（含模型与 OCR）
 
-如果不想安装 Python、也不想首次联网下载模型，可以直接下载 GitHub Release 中的 Windows 便携含模型包：
+不想安装 Python、也不想首次联网下载模型，可以直接下载 Windows 安装包：
 
-[JianYin-0.1.0-windows-x64-with-model.zip](https://github.com/AlexRaganhar/jianyin/releases/download/v0.1.0/JianYin-0.1.0-windows-x64-with-model.zip)（约 1 GB）
+[JianYin-0.2.0-windows-x64-setup-with-model.exe](https://github.com/AlexRaganhar/jianyin/releases/download/v0.2.0/JianYin-0.2.0-windows-x64-setup-with-model.exe)（约 0.9 GB）
 
-解压后双击 `启动笺隐.cmd` 即可。包内已经包含 `JianYin.exe`、完整的 Q4 ONNX 模型和启动器；不需要 Python，也不需要联网下载模型。SHA256 校验和见 Release 的 `SHA256SUMS-with-model-0.1.0.txt`。
+安装包按当前用户安装到 `%LOCALAPPDATA%\Programs\JianYin`，不需要管理员权限。安装完成后从开始菜单启动「笺隐 JianYin」。
 
-不含模型的 Windows/macOS 便携包仍在同一 Release 中；它们首次启动时会从 Hugging Face 下载模型。
+### Windows 便携包（含模型与 OCR）
 
-### macOS 含模型便携版
+也可以下载便携 ZIP：
 
-macOS 提供两个架构的含模型包：
+[JianYin-0.2.0-windows-x64-with-model.zip](https://github.com/AlexRaganhar/jianyin/releases/download/v0.2.0/JianYin-0.2.0-windows-x64-with-model.zip)
 
-- Apple Silicon：[JianYin-0.1.0-macos-arm64-with-model.zip](https://github.com/AlexRaganhar/jianyin/releases/download/v0.1.0/JianYin-0.1.0-macos-arm64-with-model.zip)
-- Intel：[JianYin-0.1.0-macos-x64-with-model.zip](https://github.com/AlexRaganhar/jianyin/releases/download/v0.1.0/JianYin-0.1.0-macos-x64-with-model.zip)
+解压后双击 `启动笺隐.cmd` 即可。包内已经包含 `JianYin.exe`、完整的 Q4 ONNX 模型、内置 OCR 引擎和启动器；不需要 Python，也不需要联网下载模型或 OCR 组件。
 
-解压后把 `JianYin.app` 拖进「应用程序」再打开。模型已放在 `JianYin.app/Contents/MacOS/models/` 内，不需要下载。构建没有 Apple 开发者签名，首次打开请右键 →「打开」，或执行 `xattr -cr /Applications/JianYin.app`。校验和见 `SHA256SUMS-with-model-macos-arm64-0.1.0.txt` / `SHA256SUMS-with-model-macos-x64-0.1.0.txt`。
+### macOS DMG（含模型与 OCR）
+
+macOS 提供两个架构的 DMG：
+
+- Apple Silicon：[JianYin-0.2.0-macos-arm64-with-model.dmg](https://github.com/AlexRaganhar/jianyin/releases/download/v0.2.0/JianYin-0.2.0-macos-arm64-with-model.dmg)
+- Intel：[JianYin-0.2.0-macos-x64-with-model.dmg](https://github.com/AlexRaganhar/jianyin/releases/download/v0.2.0/JianYin-0.2.0-macos-x64-with-model.dmg)
+
+打开 DMG 后把 `JianYin.app` 拖进「应用程序」再打开。模型和 OCR 引擎已在 App 内，不需要下载。构建没有 Apple 开发者签名，首次打开请右键 →「打开」，或执行 `xattr -cr /Applications/JianYin.app`。
+
+校验和见 Release 中的 `SHA256SUMS-with-model-0.2.0.txt`。
 
 模型来自 [openai/privacy-filter](https://huggingface.co/openai/privacy-filter)，固定 revision `7ffa9a043d54d1be65afb281eddf0ffbe629385b`，Apache-2.0。
 
@@ -140,18 +148,17 @@ CLI 与原项目一样，处理单个 TXT/Markdown 文件；Word/PDF 请使用 G
 
 常用参数：
 
-| 参数                      | 说明                   |            |
-| ----------------------- | -------------------- | ---------- |
-| `--model-dir`           | 本地 Q4 ONNX 模型目录      |            |
-| `--rules`               | 策略规则 JSON（类别 → 替换策略） |            |
-| `--chinese-rules`       | 中文补强规则配置 JSON        |            |
-| `--no-chinese`          | 关闭中文补强               |            |
-| \`--decode-mode viterbi | argmax\`             | 默认 viterbi |
-| `--max-tokens`          | 推理窗口 token 数，默认 4096 |            |
-| `--overlap-tokens`      | 窗口重叠，默认 256          |            |
-| `--offline`             | 禁止下载模型               |            |
-| `--force`               | 允许覆盖已有输出             |            |
-| `--progress`            | 向 stderr 输出不含原文的聚合进度 |            |
+| 参数 | 说明 |
+| --- | --- |
+| `--model-dir` | 本地 Q4 ONNX 模型目录 |
+| `--rules` | 策略规则 JSON（类别 → 替换策略） |
+| `--chinese-rules` | 中文补强规则配置 JSON |
+| `--no-chinese` | 关闭中文补强 |
+| `--decode-mode viterbi\|argmax` | 默认 viterbi |
+| `--max-tokens` | 推理窗口 token 数，默认 4096 |
+| `--overlap-tokens` | 窗口重叠，默认 256 |
+| `--force` | 允许覆盖已有输出 |
+| `--progress` | 向 stderr 输出不含原文的聚合进度 |
 
 stdout 只输出聚合 JSON 状态，不打印原文或替换值；错误写到 stderr。
 
@@ -217,19 +224,19 @@ OpenAI Privacy Filter 的标签体系主要是英文语境。笺隐额外提供�
 
 ## 8. 扫描 PDF 与 OCR
 
-扫描 PDF 会调用本机的 [pdf-to-markdown](../pdf-to-markdown)（PP-OCRv6 + Docling），不上传外部服务。
+扫描 PDF 使用内置的 [pdf-to-markdown](https://github.com/AlexRaganhar/pdf-to-markdown)（`jianyin_app/vendor/pdf2md`）识别，不上传外部服务，也不需要单独安装 `pdf-to-markdown`、PaddlePaddle 或 Python 环境。
 
-查找顺序：
+- OCR 引擎：RapidOCR + PP-OCRv6 small ONNX 模型（检测、识别），CPU 推理，模型随安装包分发。
+- 页面级断点：workdir 按源文件 SHA-256 生成，位于 `ocr/<哈希>/ocr.work/pages/`。取消或中断后重新导入同一文件会续跑。
+- 输出：`ocr/<哈希>/ocr.md` 和 `ocr/<哈希>/ocr.pages.txt`；案件正文使用后者，并加上 `<!-- PDF page N -->` 页锚点。
+- 失败页：不会静默丢弃，导入文本中会标记失败页，并在文档记录中写入警告。
+- 进度：GUI 底部按页显示，取消在页边界生效，已完成的页不会丢失。
 
-1. `JIANYIN_PDF_TO_MARKDOWN_DIR`
-2. `OPF_PDF_TO_MARKDOWN_DIR`
-3. 项目同级目录 `pdf-to-markdown`
-
-OCR 工具不存在时会明确报错，不会静默改用在线 OCR。OCR 部分页失败时仍导入已有页，并在文档记录中写入警告。
+OCR 完全在本机运行；首次识别需要几秒加载模型。
 
 ## 9. 隐私与边界
 
-* 除首次下载模型外不访问网络；不调用外部 API、不上传案卷。
+* 运行时不访问网络；模型下载只发生在显式的 `jianyin download-model` 或初始化脚本中，不调用外部 API、不上传案卷。
 * 映射、草稿、OCR 中间文件和源文件都只在本地工作区。
 * 日志只记录案件/文档 ID、错误码和阶段；不记录原文、替换值或密码。
 * PDF 密码只在内存中使用，不写配置、日志或映射。
@@ -269,16 +276,22 @@ OCR 工具不存在时会明确报错，不会静默改用在线 OCR。OCR 部�
 这是设计选择：笺隐只做可审阅的文本重排，不做不可靠的 DOCX/PDF 版式重写。原始文件始终保留。
 
 **OCR 不可用**\
-安装并配置 `pdf-to-markdown`，或设置 `JIANYIN_PDF_TO_MARKDOWN_DIR`。
+OCR 已内置。若提示“内置 OCR 模型缺失”或 OCR 无法启动，请重新安装完整安装包；开发环境运行
+`pip install -e ".[dev]"` 会安装 RapidOCR 和 PP-OCRv6 模型。
+
+**扫描 PDF 很慢**\
+OCR 在 CPU 上逐页运行，通常每页 1–3 秒（取决于分辨率）。大文件可以分批导入；中断后重新导入会续跑，不会从第一页重来。
 
 ## 12. 目录
 
 ```text
 jianyin/
   jianyin_app/     Python 包（模型、检测、规则、文档、工作区、GUI、CLI）
+    vendor/pdf2md/ 内置扫描 PDF OCR 分支（MIT）
   tests/           单元与集成测试
-  scripts/         setup / verify / 真实模型 smoke
-  docs/            映射、规则、GUI 流程文档
+  scripts/         setup / verify / 打包脚本
+  docs/            架构、映射、规则、GUI、macOS 文档
+  third_party_licenses/  第三方许可全文
   models/          Q4 ONNX 模型（不进入版本控制）
   启动图形界面.cmd
 ```

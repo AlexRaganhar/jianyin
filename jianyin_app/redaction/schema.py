@@ -12,7 +12,7 @@ import json
 from collections.abc import Mapping as MappingABC
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Iterable
+from typing import Any
 from typing import Mapping as TypingMapping
 
 from ..errors import DraftError, RestoreError
@@ -207,9 +207,6 @@ class Draft:
             "candidates": [candidate.to_dict() for candidate in self.candidates],
         }
         return sha256_payload(payload)
-
-    def candidate_map(self) -> dict[tuple[str, str], CandidateRule]:
-        return {(candidate.category, candidate.source): candidate for candidate in self.candidates}
 
     def to_dict(self) -> dict[str, Any]:
         payload: dict[str, Any] = {
@@ -470,16 +467,3 @@ class Mapping:
             schema_version=MAPPING_SCHEMA_VERSION,
             tool=str(payload.get("tool", TOOL_NAME)),
         )
-
-
-def occurrences_for_document(mapping: Mapping, document_id: str) -> list[MappingOccurrence]:
-    result: list[MappingOccurrence] = []
-    for record in mapping.mappings:
-        for occurrence in record.occurrences:
-            if occurrence.document_id == document_id:
-                result.append(occurrence)
-    return result
-
-
-def group_mapping_records(records: Iterable[MappingRecord]) -> list[MappingRecord]:
-    return sorted(records, key=lambda record: record.id)

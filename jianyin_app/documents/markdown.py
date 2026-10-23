@@ -51,10 +51,6 @@ def page_ranges(text: str) -> list[PageRange]:
     return ranges
 
 
-def strip_page_markers(text: str) -> str:
-    return PAGE_MARKER_RE.sub("", text)
-
-
 def safe_stem(name: str, *, fallback: str = "document", max_length: int = 80) -> str:
     value = Path(str(name)).name
     value = _INVALID_FILENAME_RE.sub("_", value)

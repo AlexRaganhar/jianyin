@@ -119,7 +119,3 @@ def source_display(source: str) -> str:
     for piece in source.split("+"):
         pieces.append(source_display(piece))
     return " + ".join(pieces)
-
-
-def highlight_color(category: str) -> str:
-    return load_category_labels().get(category, {}).get("color", "#8C6A2F")

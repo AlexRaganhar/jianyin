@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from ..config import WorkspaceSettings
-from ..errors import ConfigurationError
 from .paths import atomic_write_text, read_json
 
 
@@ -32,10 +31,3 @@ def _json_text(payload: Mapping[str, Any]) -> str:
     import json
 
     return json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
-
-
-def validate_settings(settings: WorkspaceSettings) -> None:
-    try:
-        settings.model_config()
-    except ConfigurationError:
-        raise

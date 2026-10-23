@@ -60,24 +60,52 @@ def common_args() -> list[str]:
         # importlib.resources at runtime, so they must sit next to the package.
         "--collect-data",
         "jianyin_app",
-        "--collect-submodules",
-        "onnxruntime",
-        # huggingface_hub exposes its public API through a lazy __getattr__
-        # table, so PyInstaller's static analysis cannot see those imports.
-        "--collect-submodules",
-        "huggingface_hub",
-        "--copy-metadata",
-        "huggingface_hub",
+        # The bundled OCR stack: RapidOCR ships the PP-OCRv6 ONNX models and
+        # its YAML config as package data. Only the ONNX Runtime backend is
+        # collected; the PyTorch/OpenVINO/TensorRT modules are not used.
+        "--collect-data",
+        "rapidocr",
+        "--hidden-import",
+        "rapidocr.main",
+        "--hidden-import",
+        "rapidocr.inference_engine.onnxruntime.main",
+        "--collect-all",
+        "pypdfium2",
+        "--collect-all",
+        "pypdfium2_raw",
         "--copy-metadata",
         "onnxruntime",
         "--copy-metadata",
         "tokenizers",
+        "--copy-metadata",
+        "rapidocr",
+        "--copy-metadata",
+        "pypdfium2",
+        "--copy-metadata",
+        "numpy",
         "--exclude-module",
         "pytest",
         "--exclude-module",
         "matplotlib",
         "--exclude-module",
         "IPython",
+        # The frozen app is offline-only: model acquisition is a build or CLI
+        # step (``pip install -e ".[download]"`` + ``jianyin download-model``).
+        "--exclude-module",
+        "huggingface_hub",
+        # Never pull the heavy upstream OCR stack into the bundle.
+        "--exclude-module",
+        "paddle",
+        "--exclude-module",
+        "paddleocr",
+        "--exclude-module",
+        "paddlex",
+        "--exclude-module",
+        "docling",
+        "--exclude-module",
+        "torch",
+        "--exclude-module",
+        "transformers",
     ]
 
 

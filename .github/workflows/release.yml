@@ -5,21 +5,27 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag, e.g. v0.2.0"
+        required: true
+        default: "v0.2.0"
 
 permissions:
   contents: write
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 env:
   PYTHON_VERSION: "3.12"
   PYINSTALLER_SPEC: "pyinstaller>=6.11,<7"
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
 
 jobs:
   windows:
-    name: Windows x64
+    name: Windows x64 (installer + portable, model + OCR)
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,7 +38,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev]" "${{ env.PYINSTALLER_SPEC }}"
+          python -m pip install -e ".[dev,download]" "${{ env.PYINSTALLER_SPEC }}"
 
       - name: Tests
         run: python -m pytest -q -m "not slow"
@@ -40,39 +46,84 @@ jobs:
       - name: Build standalone executable
         run: python scripts/build_release.py
 
-      - name: Verify frozen bundle
+      - name: Verify frozen executable (including bundled OCR)
         shell: pwsh
         run: |
-          # The GUI binary is a Windows-subsystem executable: PowerShell will not
-          # wait for it, so start it explicitly and inspect the exit code.
           $process = Start-Process -FilePath .\dist\JianYin.exe -ArgumentList '--self-check' -PassThru
-          if (-not $process.WaitForExit(180000)) {
+          if (-not $process.WaitForExit(240000)) {
             Stop-Process -Id $process.Id -Force
             throw 'self-check timed out'
           }
           if ($process.ExitCode -ne 0) { throw "self-check failed with exit code $($process.ExitCode)" }
-          Write-Host 'frozen bundle self-check passed'
 
-      - name: Package
+      - name: Download Q4 model
+        run: python -m jianyin_app.cli download-model --model-dir models/openai-privacy-filter-q4
+
+      - name: Package portable ZIP with model
         shell: pwsh
         run: |
-          $version = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME -replace '^v', '' } else { '0.0.0-dev' }
+          $version = $env:RELEASE_TAG -replace '^v', ''
           "JIANYIN_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          Compress-Archive -Path dist/JianYin.exe -DestinationPath "JianYin-$version-windows-x64.zip" -Force
-          # Keep every artifact at the workspace root so the release job can
-          # checksum a flat directory (nested paths would recreate dist/dist).
-          Copy-Item dist/JianYin.exe "JianYin-$version-windows-x64.exe"
+          python scripts/package_portable_with_model.py `
+            --exe dist/JianYin.exe `
+            --model-dir models/openai-privacy-filter-q4 `
+            --output "JianYin-$version-windows-x64-with-model.zip" `
+            --version $version
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Build Windows installer with model
+        shell: pwsh
+        run: |
+          python scripts/package_windows_installer.py `
+            --exe dist/JianYin.exe `
+            --model-dir models/openai-privacy-filter-q4 `
+            --output "JianYin-$env:JIANYIN_VERSION-windows-x64-setup-with-model.exe" `
+            --version $env:JIANYIN_VERSION
+
+      - name: Verify installer installs and runs
+        shell: pwsh
+        run: |
+          $installDir = Join-Path $env:RUNNER_TEMP "JianYinInstall"
+          $setup = "JianYin-$env:JIANYIN_VERSION-windows-x64-setup-with-model.exe"
+          $install = Start-Process -FilePath $setup `
+            -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/DIR=$installDir" `
+            -Wait -PassThru
+          if ($install.ExitCode -ne 0) { throw "installer failed: $($install.ExitCode)" }
+          $check = Start-Process -FilePath (Join-Path $installDir "JianYin.exe") `
+            -ArgumentList '--self-check' -Wait -PassThru
+          if ($check.ExitCode -ne 0) { throw "installed app self-check failed: $($check.ExitCode)" }
+          $uninstall = Join-Path $installDir "unins000.exe"
+          if (Test-Path $uninstall) {
+            Start-Process -FilePath $uninstall -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -Wait
+          }
+
+      - name: Write checksums
+        shell: pwsh
+        run: |
+          $version = $env:JIANYIN_VERSION
+          $names = @(
+            "JianYin-$version-windows-x64-with-model.zip",
+            "JianYin-$version-windows-x64-setup-with-model.exe"
+          )
+          $lines = foreach ($name in $names) {
+            $hash = (Get-FileHash -LiteralPath $name -Algorithm SHA256).Hash.ToLower()
+            "$hash  $name"
+          }
+          $lines | Out-File -FilePath "SHA256SUMS-with-model-windows-$version.txt" -Encoding ascii
 
       - uses: actions/upload-artifact@v4
         with:
-          name: windows-x64
+          name: windows-with-model
           if-no-files-found: error
           path: |
-            JianYin-*-windows-x64.zip
-            JianYin-*-windows-x64.exe
+            JianYin-*-windows-x64-with-model.zip
+            JianYin-*-windows-x64-setup-with-model.exe
+            SHA256SUMS-with-model-windows-*.txt
 
   macos:
-    name: macOS ${{ matrix.arch }}
+    name: macOS ${{ matrix.arch }} (DMG, model + OCR)
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -85,12 +136,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # The python.org builds shipped by setup-python do not reliably include
-      # _tkinter on macOS, so use Homebrew Python plus the python-tk formula.
       - name: Install Python with Tk
         run: |
-          # `brew link` can fail when the runner image already ships python@3.12;
-          # the absolute keg path below is used, so a link conflict is harmless.
           brew install python@3.12 python-tk@3.12 || true
           "$(brew --prefix python@3.12)/bin/python3.12" -c "import tkinter; print('tk', tkinter.TkVersion)"
 
@@ -102,7 +149,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          .venv/bin/python -m pip install -e ".[dev]" "${{ env.PYINSTALLER_SPEC }}"
+          .venv/bin/python -m pip install -e ".[dev,download]" "${{ env.PYINSTALLER_SPEC }}"
 
       - name: Tests
         run: .venv/bin/python -m pytest -q -m "not slow"
@@ -110,27 +157,52 @@ jobs:
       - name: Build standalone app
         run: .venv/bin/python scripts/build_release.py
 
-      - name: Verify frozen bundle
+      - name: Verify frozen app (including bundled OCR)
         run: |
           "dist/JianYin.app/Contents/MacOS/JianYin" --self-check
 
-      - name: Package
+      - name: Download Q4 model
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          [ "$GITHUB_REF_TYPE" = "tag" ] || VERSION="0.0.0-dev"
-          echo "JIANYIN_VERSION=$VERSION" >> "$GITHUB_ENV"
-          ditto -c -k --sequesterRsrc --keepParent "dist/JianYin.app" "JianYin-$VERSION-macos-${{ matrix.arch }}.zip"
+          .venv/bin/python -m jianyin_app.cli download-model --model-dir models/openai-privacy-filter-q4
+
+      - name: Build DMG with model
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${RELEASE_TAG#v}"
+          ARCH="${{ matrix.arch }}"
+          .venv/bin/python scripts/package_macos_dmg.py \
+            --app "dist/JianYin.app" \
+            --model-dir "models/openai-privacy-filter-q4" \
+            --output "JianYin-$VERSION-macos-$ARCH-with-model.dmg" \
+            --version "$VERSION" \
+            --arch "$ARCH"
+          shasum -a 256 "JianYin-$VERSION-macos-$ARCH-with-model.dmg" \
+            > "SHA256SUMS-with-model-macos-$ARCH-$VERSION.txt"
+
+      - name: Verify app inside the DMG
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${RELEASE_TAG#v}"
+          DMG="JianYin-$VERSION-macos-${{ matrix.arch }}-with-model.dmg"
+          MOUNT="$(mktemp -d)"
+          hdiutil attach "$DMG" -nobrowse -readonly -mountpoint "$MOUNT"
+          trap 'hdiutil detach "$MOUNT" -quiet || true' EXIT
+          "$MOUNT/JianYin.app/Contents/MacOS/JianYin" --self-check
 
       - uses: actions/upload-artifact@v4
         with:
-          name: macos-${{ matrix.arch }}
+          name: macos-${{ matrix.arch }}-with-model
           if-no-files-found: error
-          path: JianYin-*-macos-${{ matrix.arch }}.zip
+          path: |
+            JianYin-*-macos-${{ matrix.arch }}-with-model.dmg
+            SHA256SUMS-with-model-macos-${{ matrix.arch }}-*.txt
 
   release:
     name: Publish release
     needs: [windows, macos]
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -138,30 +210,43 @@ jobs:
           path: dist
           merge-multiple: true
 
-      - name: Generate checksums
+      - name: Generate combined checksums
         run: |
+          set -euo pipefail
+          VERSION="${RELEASE_TAG#v}"
           cd dist
-          find . -maxdepth 1 -type d -name dist -exec rm -rf {} +
-          rm -f SHA256SUMS.txt
-          find . -maxdepth 1 -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
-          cat SHA256SUMS.txt
+          rm -f SHA256SUMS-with-model-*.txt
+          find . -maxdepth 1 -type f -print0 | sort -z | xargs -0 sha256sum \
+            > "SHA256SUMS-with-model-$VERSION.txt"
+          cat "SHA256SUMS-with-model-$VERSION.txt"
 
-      - name: Create GitHub Release
+      - name: Create or update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: 笺隐 ${{ env.RELEASE_TAG }}
           files: dist/*
           fail_on_unmatched_files: true
           generate_release_notes: true
           append_body: true
           body: |
-            ## 安装说明
+            ## 下载
 
-            Windows：解压 `JianYin-*-windows-x64.zip`（或直接下载同名 `.exe`），双击运行，无需安装 Python。
+            | 平台 | 安装包 | 便携包 |
+            | --- | --- | --- |
+            | Windows x64 | `JianYin-*-windows-x64-setup-with-model.exe` | `JianYin-*-windows-x64-with-model.zip` |
+            | macOS Apple Silicon | `JianYin-*-macos-arm64-with-model.dmg` | 拖拽安装 |
+            | macOS Intel | `JianYin-*-macos-x64-with-model.dmg` | 拖拽安装 |
 
-            macOS：解压后把 `JianYin.app` 拖进「应用程序」。本次构建没有 Apple 开发者签名，
-            首次打开需右键 →「打开」，或在终端执行 `xattr -cr /Applications/JianYin.app` 解除隔离。
+            每个包都已经包含 OpenAI Privacy Filter Q4 模型和内置 OCR 引擎
+            （pdf-to-markdown / PP-OCRv6 small），不需要安装 Python，也不需要联网下载模型。
+            扫描 PDF 可以直接导入识别。
 
-            首次使用：程序会自动从 Hugging Face 下载约 945 MB 的 Q4 ONNX 模型到用户数据目录；
-            也可以设置环境变量 `JIANYIN_MODEL_DIR` 指向已有的完整模型目录，实现完全离线运行。
+            Windows 安装包为当前用户安装（无需管理员权限），也可以使用便携 ZIP 解压后双击
+            `启动笺隐.cmd`。
 
-            校验下载文件：`sha256sum -c SHA256SUMS.txt`（Windows 用 `Get-FileHash` 对照）。
+            macOS DMG 打开后把 `JianYin.app` 拖进「应用程序」。构建没有 Apple 开发者签名，
+            首次打开请右键 →「打开」，或执行 `xattr -cr /Applications/JianYin.app`。
+
+            校验：`sha256sum -c SHA256SUMS-with-model-*.txt`（Windows 用 `Get-FileHash` 对照）。
+            第三方组件许可见包内 `THIRD_PARTY_NOTICES.md` 和 `third_party_licenses/`。

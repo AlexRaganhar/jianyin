@@ -27,11 +27,6 @@ class ConfigurationError(JianYinError):
     default_message = "配置无效，请检查本地设置。"
 
 
-class UserInputError(JianYinError):
-    code = "INPUT_INVALID"
-    default_message = "输入参数无效。"
-
-
 class ModelError(JianYinError):
     code = "MODEL_ERROR"
     default_message = "模型运行时出错。"

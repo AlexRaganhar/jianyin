@@ -1,6 +1,5 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import pytest
@@ -8,6 +7,7 @@ from docx import Document
 from pypdf import PdfWriter
 
 from jianyin_app.config import WorkspaceSettings
+from jianyin_app.documents.pdf_ocr import OcrTextResult
 from jianyin_app.errors import UnsupportedDocumentError, WorkspaceError
 from jianyin_app.workspace.store import CaseWorkspace
 
@@ -77,15 +77,11 @@ def test_encrypted_pdf_uses_password_and_fake_ocr(tmp_path, monkeypatch) -> None
     _blank_pdf(source, password="secret")
     monkeypatch.setattr("jianyin_app.workspace.store.extract_pdf_pages", lambda _path: [""])
 
-    def fake_ocr(_input_pdf, output_markdown, workdir):
-        pages = workdir / "pages"
-        pages.mkdir(parents=True, exist_ok=True)
-        (pages / "page_0001.txt").write_text("Alice\n", encoding="utf-8")
+    def fake_ocr(_input_pdf, output_markdown):
+        output_markdown.parent.mkdir(parents=True, exist_ok=True)
         output_markdown.write_text("Alice\n", encoding="utf-8")
-        (workdir / "progress.json").write_text(
-            json.dumps({"total": 1, "done": [1], "failed": []}),
-            encoding="utf-8",
-        )
+        output_markdown.with_suffix(".pages.txt").write_text("Alice\n", encoding="utf-8")
+        return OcrTextResult(text="<!-- PDF page 1 -->\nAlice\n", page_count=1, failed_pages=())
 
     record = workspace.import_document(case["id"], source, password="secret", ocr_runner=fake_ocr)
     assert record["was_encrypted"] is True

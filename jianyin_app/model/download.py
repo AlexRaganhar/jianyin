@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -148,6 +149,10 @@ def ensure_model(
     if existing is not None:
         return existing
     if not allow_download or offline:
+        if getattr(sys, "frozen", False):
+            raise ModelNotFoundError(
+                "未找到随包携带的 Q4 ONNX 模型，安装包可能不完整；请重新下载完整安装包。"
+            )
         raise ModelNotFoundError(
             "未找到完整的 Q4 ONNX 模型。请运行 `jianyin download-model`，"
             "或用 --model-dir 指定本地模型目录。"

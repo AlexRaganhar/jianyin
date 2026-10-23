@@ -43,22 +43,6 @@ def atomic_write_text(path: Path, content: str) -> Path:
     return path
 
 
-def atomic_write_bytes(path: Path, content: bytes) -> Path:
-    ensure_dir(path.parent)
-    temporary = path.with_name(f".{path.name}.{uuid4().hex}.tmp")
-    try:
-        temporary.write_bytes(content)
-        os.replace(temporary, path)
-    except OSError as error:
-        raise WorkspaceError("无法写入本地文件。") from error
-    finally:
-        try:
-            temporary.unlink(missing_ok=True)
-        except OSError:
-            pass
-    return path
-
-
 def write_json(path: Path, payload: Any) -> Path:
     return atomic_write_text(path, json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
 
@@ -104,12 +88,3 @@ def relative_to(root: Path, path: Path) -> str:
         return path.resolve().relative_to(root.resolve()).as_posix()
     except ValueError as error:
         raise WorkspaceError("文件路径越出了本地工作区。") from error
-
-
-def unique_path(directory: Path, stem: str, suffix: str) -> Path:
-    candidate = directory / f"{stem}{suffix}"
-    counter = 2
-    while candidate.exists():
-        candidate = directory / f"{stem}-{counter}{suffix}"
-        counter += 1
-    return candidate

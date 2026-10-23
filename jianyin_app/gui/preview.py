@@ -175,6 +175,3 @@ class PreviewPane:
             self.text.focus_set()
         except tk.TclError:
             pass
-
-    def focus_text(self) -> None:
-        self.text.focus_set()

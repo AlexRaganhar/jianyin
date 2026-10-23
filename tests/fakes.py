@@ -1,4 +1,4 @@
-﻿"""Shared test doubles."""
+"""Shared test doubles."""
 
 from __future__ import annotations
 
@@ -48,17 +48,4 @@ class FakeDetector:
             warnings=(self.warning,) if self.warning else (),
             stats={"runtime": "fake-model", "detected_span_count": len(detections)},
         )
-
-
-class StaticDetector:
-    def __init__(self, detections_by_text: Mapping[str, Sequence[Detection]]) -> None:
-        self.detections_by_text = detections_by_text
-
-    @property
-    def metadata(self) -> dict[str, Any]:
-        return {"runtime": "static-fake"}
-
-    def detect(self, text: str, *, progress=None, cancel=None) -> DetectionBatch:
-        detections = self.detections_by_text.get(text, ())
-        return DetectionBatch(text=text, detections=tuple(detections))
 

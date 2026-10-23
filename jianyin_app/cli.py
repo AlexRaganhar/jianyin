@@ -71,7 +71,6 @@ def _build_parser() -> argparse.ArgumentParser:
             default=DEFAULT_OVERLAP_TOKENS,
             help=f"窗口重叠 token 数，默认 {DEFAULT_OVERLAP_TOKENS}。",
         )
-        subparser.add_argument("--offline", action="store_true", help="禁止下载模型，只使用本地模型。")
         subparser.add_argument("--progress", action="store_true", help="向 stderr 输出聚合进度 JSON。")
         subparser.add_argument("--force", action="store_true", help="允许覆盖已有输出。")
 
@@ -156,7 +155,6 @@ def _build_detector(args: argparse.Namespace, progress: ProgressCallback | None)
         window_size=args.max_tokens,
         overlap_tokens=args.overlap_tokens,
         decode_mode=args.decode_mode,
-        offline=args.offline,
     ).normalized()
     model = OnnxPrivacyFilter(config)
     from .config import ChineseRuleOptions, DetectionOptions

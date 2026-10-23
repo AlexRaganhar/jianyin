@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Mapping, Protocol, Sequence
+from typing import Any, Callable, Mapping, Protocol
 
 from ..errors import OperationCancelled
 
@@ -22,17 +22,6 @@ class Detection:
     source: str = "model"
     subtype: str | None = None
     priority: int = 60
-
-    def with_source(self, source: str, *, priority: int) -> "Detection":
-        return Detection(
-            category=self.category,
-            start=self.start,
-            end=self.end,
-            text=self.text,
-            source=source,
-            subtype=self.subtype,
-            priority=max(self.priority, priority),
-        )
 
 
 @dataclass(frozen=True)
@@ -73,18 +62,3 @@ def emit_progress(progress: ProgressCallback | None, payload: Mapping[str, Any])
     except Exception:
         # A display callback must never interrupt a local analysis.
         pass
-
-
-def batch_from_detections(
-    text: str,
-    detections: Sequence[Detection],
-    *,
-    warnings: Sequence[str] = (),
-    stats: Mapping[str, Any] | None = None,
-) -> DetectionBatch:
-    return DetectionBatch(
-        text=text,
-        detections=tuple(detections),
-        warnings=tuple(warnings),
-        stats=dict(stats or {}),
-    )

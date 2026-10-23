@@ -24,16 +24,16 @@ REQUIRED_RESOURCES: tuple[str, ...] = (
 
 
 def self_check() -> int:
+    import tkinter
     from importlib.resources import files
 
     import onnxruntime  # noqa: F401
-    import tkinter
     import tokenizers  # noqa: F401
-    from huggingface_hub import snapshot_download  # noqa: F401
 
     from jianyin_app import config
     from jianyin_app.gui import app as gui_app  # noqa: F401
-    from jianyin_app.model import download  # noqa: F401
+    from jianyin_app.model.download import find_existing_model
+    from jianyin_app.vendor.pdf2md.ocr import OcrEngine
 
     root = files("jianyin_app")
     missing = [name for name in REQUIRED_RESOURCES if not root.joinpath(*name.split("/")).is_file()]
@@ -41,13 +41,18 @@ def self_check() -> int:
         print("self-check failed: missing resources " + ", ".join(missing), flush=True)
         return 2
 
+    # Instantiate the bundled OCR engine: this verifies the PP-OCRv6 models
+    # and ONNX Runtime native libraries are present, not just importable.
+    OcrEngine()
+
     interpreter = tkinter.Tcl()
     patchlevel = interpreter.eval("info patchlevel")
+    model_dir = find_existing_model() or config.default_model_directory()
 
     print(
         f"self-check ok: python {sys.version.split()[0]}, "
         f"tk {patchlevel}, onnxruntime {onnxruntime.__version__}, "
-        f"model dir {config.default_model_directory()}",
+        f"ocr models ok, model dir {model_dir}",
         flush=True,
     )
     return 0

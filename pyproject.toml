@@ -4,22 +4,27 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jianyin-app"
-version = "0.1.0"
+version = "0.2.0"
 description = "笺隐：本地、可审阅、可还原的案件文档脱敏工作台。"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
 authors = [{ name = "JianYin contributors" }]
 dependencies = [
-  "huggingface_hub>=0.24",
   "numpy>=1.26",
   "onnxruntime>=1.20",
+  "pillow>=9",
   "pypdf>=5.0",
+  "pypdfium2>=5",
   "python-docx>=1.1",
+  "rapidocr>=3.9,<4",
   "tokenizers>=0.20",
 ]
 
 [project.optional-dependencies]
+download = [
+  "huggingface_hub>=0.24",
+]
 dev = [
   "pytest>=8.0",
   "ruff>=0.6",

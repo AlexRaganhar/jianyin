@@ -1,11 +1,11 @@
-﻿"""Small real-model smoke test; prints aggregate counts only."""
+"""Small real-model smoke test; prints aggregate counts only."""
 
 from __future__ import annotations
 
 import argparse
-from collections import Counter
 import sys
 import time
+from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -50,4 +50,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

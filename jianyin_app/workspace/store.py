@@ -21,7 +21,7 @@ from ..documents.importers import (
     unlock_or_copy_pdf,
 )
 from ..documents.markdown import page_anchored_text
-from ..documents.pdf_ocr import OcrRunner, default_ocr_runner, read_ocr_pages
+from ..documents.pdf_ocr import OcrRunner, run_ocr
 from ..errors import DocumentError, OperationCancelled, WorkspaceError
 from ..redaction.schema import DocumentText, Draft
 from .paths import (
@@ -355,9 +355,12 @@ class CaseWorkspace:
                     created_paths.append(original_encrypted)
                 pages = extract_pdf_pages(source_copy)
                 if is_scanned_pdf(pages):
-                    ocr_dir = case_dir / "ocr" / document_id
+                    # The hash makes the OCR checkpoint resumable across
+                    # re-imports: cancel a 500-page scan, import it again, and
+                    # the finished pages are reused instead of re-OCR'd.
+                    ocr_dir = case_dir / "ocr" / source_hash[:16]
                     ensure_dir(ocr_dir)
-                    ocr_markdown = case_dir / "extracted" / f"{document_id}.ocr.md"
+                    ocr_markdown = ocr_dir / "ocr.md"
                     emit_progress(
                         progress,
                         {
@@ -368,27 +371,31 @@ class CaseWorkspace:
                         },
                     )
                     if ocr_runner is not None:
-                        ocr_runner(source_copy, ocr_markdown, ocr_dir)
+                        ocr_text = ocr_runner(source_copy, ocr_markdown)
                     else:
-                        default_ocr_runner(
+                        ocr_text = run_ocr(
                             source_copy,
                             ocr_markdown,
-                            ocr_dir,
+                            source_path=source,
                             progress=progress,
                             cancel=cancel,
                         )
-                    ocr_text = read_ocr_pages(ocr_dir, ocr_markdown)
                     if ocr_markdown.is_file():
                         created_paths.append(ocr_markdown)
+                    ocr_pages = ocr_markdown.with_suffix(".pages.txt")
+                    if ocr_pages.is_file():
+                        created_paths.append(ocr_pages)
                     extracted_text = ocr_text.text
                     metadata.update(
                         {
                             "extraction_method": "pdf-to-markdown-ocr",
                             "page_count": ocr_text.page_count,
-                            "ocr_workdir": self.relative_path(case_id, ocr_dir),
+                            "ocr_dir": self.relative_path(case_id, ocr_dir),
                             "ocr_markdown_path": self.relative_path(case_id, ocr_markdown),
                         }
                     )
+                    if ocr_pages.is_file():
+                        metadata["ocr_pages_path"] = self.relative_path(case_id, ocr_pages)
                     if ocr_text.failed_pages:
                         metadata["warnings"] = [
                             "OCR 有 " + str(len(ocr_text.failed_pages)) + " 页失败，请人工复核。"
@@ -440,13 +447,16 @@ class CaseWorkspace:
             self.add_document(case_id, record)
             emit_progress(progress, {"stage": "import_finished", "document_id": document_id})
             return record
-        except Exception:
+        except Exception as error:
             for path in reversed(created_paths):
                 try:
                     path.unlink(missing_ok=True)
                 except OSError:
                     pass
-            if ocr_dir is not None:
+            # Cancellation keeps the page checkpoints so importing the same
+            # file again resumes instead of starting over. Other failures
+            # discard the partial OCR output with the rest of the import.
+            if ocr_dir is not None and not isinstance(error, OperationCancelled):
                 shutil.rmtree(ocr_dir, ignore_errors=True)
             raise
 

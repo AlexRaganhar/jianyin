@@ -11,7 +11,7 @@
 
 支持 TXT、Markdown、DOCX、文本 PDF、扫描 PDF。
 
-- 扫描 PDF 自动调用本地 `pdf-to-markdown`，底部显示页进度。
+- 扫描 PDF 自动调用内置 OCR（pdf-to-markdown / PP-OCRv6），底部显示页进度。
 - 同一密码的多个 PDF 使用“批量解锁 PDF”；密码只在内存中使用。
 - 加密 PDF 的原始加密副本保留在 `sources/`，供识别的解锁副本也在本地。
 - 重复文件会提示“与已导入文档内容相同”，但允许继续导入。

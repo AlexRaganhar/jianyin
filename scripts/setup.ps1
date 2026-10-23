@@ -16,7 +16,7 @@ if (-not (Test-Path $Python)) {
 
 Write-Host "安装项目依赖……"
 & $Python -m pip install --upgrade pip --disable-pip-version-check
-$InstallSpec = "$Root" + "[dev]"
+$InstallSpec = "$Root" + "[dev,download]"
 & $Python -m pip install -e $InstallSpec --disable-pip-version-check
 
 $ModelDest = Join-Path $Root "models\openai-privacy-filter-q4"

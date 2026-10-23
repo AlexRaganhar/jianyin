@@ -118,10 +118,6 @@ def default_ruleset() -> RuleSet:
     return RuleSet.from_dict(payload)
 
 
-def load_ruleset(path: str | Path | None) -> RuleSet:
-    return RuleSet.from_path(path) if path else default_ruleset()
-
-
 def validate_target(source: str, target: str) -> None:
     if not target:
         raise PolicyError("替换值不能为空。")

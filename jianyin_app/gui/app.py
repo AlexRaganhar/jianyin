@@ -816,7 +816,7 @@ class JianYinApp:
             self._show_error(error)
             return
         self._reset_progress()
-        self._set_running(True, "正在加载本地模型并分析案件；首次使用可能需要下载模型。")
+        self._set_running(True, "正在加载本地模型并分析案件。")
         workspace = self.workspace
         rules = self.ruleset
         options = self.settings.detection_options()
@@ -1170,12 +1170,6 @@ class JianYinApp:
         self._render_preview()
 
     # ------------------------------------------------------------------ jobs
-    def _start_job(self, kind: str, job: Any, status: str) -> None:
-        self._reset_progress()
-        self._set_running(True, status)
-        if not self.job.start(kind, job):
-            self._set_running(False)
-
     def _on_job_event(self, status: str, kind: str, payload: Any) -> None:
         if status == "progress":
             self._handle_progress(kind, payload)
@@ -1278,7 +1272,7 @@ class JianYinApp:
         event = dict(payload)
         stage = event.get("stage")
         if stage == "model_download":
-            self._set_status("首次使用需下载约 945 MB 的 Q4 ONNX 模型，请保持网络连接。")
+            self._set_status("正在准备本地 Q4 ONNX 模型。")
             return
         if kind == "import":
             total_files = event.get("total_files")

@@ -14,9 +14,8 @@ MODEL_REPOSITORY = "openai/privacy-filter"
 MODEL_REVISION = "7ffa9a043d54d1be65afb281eddf0ffbe629385b"
 MODEL_VARIANT = "q4"
 MODEL_DIR_NAME = "openai-privacy-filter-q4"
-MODEL_ENV_VARS = ("JIANYIN_MODEL_DIR", "OPF_MODEL_DIR")
-CASE_WORKSPACE_ENV_VARS = ("JIANYIN_CASE_WORKSPACE", "OPF_CASE_WORKSPACE")
-OCR_DIR_ENV_VARS = ("JIANYIN_PDF_TO_MARKDOWN_DIR", "OPF_PDF_TO_MARKDOWN_DIR")
+MODEL_ENV_VARS = ("JIANYIN_MODEL_DIR",)
+CASE_WORKSPACE_ENV_VARS = ("JIANYIN_CASE_WORKSPACE",)
 
 DECODE_MODES = ("viterbi", "argmax")
 DEFAULT_WINDOW_SIZE = 4096
@@ -119,22 +118,6 @@ def model_directory_candidates(explicit: str | Path | None = None) -> list[Path]
     return values
 
 
-def pdf_to_markdown_candidates() -> list[Path]:
-    values: list[Path] = []
-    for name in OCR_DIR_ENV_VARS:
-        configured = os.environ.get(name)
-        if configured:
-            values.append(Path(configured).expanduser())
-    root = project_root()
-    values.extend(
-        [
-            root.parent / "pdf-to-markdown",
-            root / "pdf-to-markdown",
-        ]
-    )
-    return values
-
-
 def _as_int(value: Any, field_name: str) -> int:
     if isinstance(value, bool):
         raise ConfigurationError(f"{field_name} 必须是整数。")
@@ -165,7 +148,7 @@ class ModelConfig:
     overlap_tokens: int = DEFAULT_OVERLAP_TOKENS
     decode_mode: str = "viterbi"
     device: str = "cpu"
-    offline: bool = False
+    offline: bool = True
     max_tokens: int = MAX_TOKENS
     max_characters: int = MAX_CHARACTERS
 
@@ -266,7 +249,7 @@ class WorkspaceSettings:
     decode_mode: str = "viterbi"
     export_docx: bool = True
 
-    def model_config(self, *, offline: bool = False) -> ModelConfig:
+    def model_config(self, *, offline: bool = True) -> ModelConfig:
         return ModelConfig(
             model_dir=self.model_dir,
             window_size=self.window_size,
@@ -305,24 +288,6 @@ class WorkspaceSettings:
         )
         settings.model_config().validate()
         return settings
-
-
-def settings_from_env() -> WorkspaceSettings:
-    """Build settings from environment variables for CLI use."""
-    return WorkspaceSettings(
-        model_dir=os.environ.get("JIANYIN_MODEL_DIR") or os.environ.get("OPF_MODEL_DIR"),
-    )
-
-
-def ensure_within(root: Path, candidate: Path) -> Path:
-    """Resolve ``candidate`` and ensure it stays inside ``root``."""
-    resolved_root = root.resolve()
-    resolved = candidate.resolve()
-    try:
-        resolved.relative_to(resolved_root)
-    except ValueError as error:
-        raise ConfigurationError("文件路径越出了本地工作区。") from error
-    return resolved
 
 
 def unique_paths(values: Iterable[Path]) -> list[Path]:
