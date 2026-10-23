@@ -51,3 +51,18 @@ def test_bundled_ocr_reads_scanned_pdf(tmp_path: Path) -> None:
 def test_cancel_is_reported_before_any_work(tmp_path: Path) -> None:
     with pytest.raises(OperationCancelled):
         run_ocr(tmp_path / "missing.pdf", tmp_path / "out.md", cancel=lambda: True)
+
+
+def test_failed_page_is_marked_in_imported_text(tmp_path: Path, monkeypatch) -> None:
+    class FakeResult:
+        pages = [[], []]
+        failed_pages = [2]
+        total_pages = 2
+
+    monkeypatch.setattr(
+        "jianyin_app.documents.pdf_ocr.convert_pdf",
+        lambda *args, **kwargs: FakeResult(),
+    )
+    result = run_ocr(tmp_path / "scan.pdf", tmp_path / "ocr.md")
+    assert result.failed_pages == (2,)
+    assert "（第 2 页 OCR 失败）" in result.text

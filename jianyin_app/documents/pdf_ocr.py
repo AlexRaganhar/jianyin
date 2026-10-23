@@ -14,7 +14,7 @@ from typing import Callable
 from ..detection.base import CancelCheck, ProgressCallback, check_cancelled, emit_progress
 from ..errors import OcrError, OperationCancelled
 from ..vendor.pdf2md import convert_pdf
-from ..vendor.pdf2md.markdown import blocks_to_text
+from ..vendor.pdf2md.markdown import blocks_to_text, failed_page_marker
 from .markdown import page_anchored_text
 
 
@@ -68,7 +68,11 @@ def run_ocr(
     except Exception as error:
         raise OcrError("扫描 PDF 的 OCR 转换未完成。") from error
 
-    pages = [blocks_to_text(blocks, threshold) for blocks in result.pages]
+    failed = frozenset(result.failed_pages)
+    pages = [
+        failed_page_marker(page_no) if page_no in failed else blocks_to_text(blocks, threshold)
+        for page_no, blocks in enumerate(result.pages, start=1)
+    ]
     return OcrTextResult(
         text=page_anchored_text(pages),
         page_count=result.total_pages,
