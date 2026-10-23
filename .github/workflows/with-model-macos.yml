@@ -81,16 +81,16 @@ jobs:
           cp LICENSE NOTICE README.md "$STAGE/"
 
           cat > "$MODEL_DIR/MODEL_NOTICE.txt" <<'EOF'
-OpenAI Privacy Filter
+          OpenAI Privacy Filter
 
-Source: https://huggingface.co/openai/privacy-filter
-Repository: openai/privacy-filter
-Revision: 7ffa9a043d54d1be65afb281eddf0ffbe629385b
-License: Apache License 2.0
+          Source: https://huggingface.co/openai/privacy-filter
+          Repository: openai/privacy-filter
+          Revision: 7ffa9a043d54d1be65afb281eddf0ffbe629385b
+          License: Apache License 2.0
 
-Bundled with JianYin for offline macOS use. The model is an aid, not an
-anonymization or compliance guarantee. Manual review is required.
-EOF
+          Bundled with JianYin for offline macOS use. The model is an aid, not an
+          anonymization or compliance guarantee. Manual review is required.
+          EOF
 
           (
             cd "$MODEL_DIR"
