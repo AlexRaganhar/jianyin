@@ -59,13 +59,15 @@ py -3.12 -m venv .venv
 
 如果你已经有完整 Q4 目录，也可以直接复制到项目的 `models\openai-privacy-filter-q4\`，或用 `--model-dir` 指向它。
 
-### 含模型版下载
+### Windows 含模型便携版
 
-如果不想首次联网下载模型，可以直接下载 GitHub Release 中的含模型包：
+如果不想安装 Python、也不想首次联网下载模型，可以直接下载 GitHub Release 中的 Windows 便携含模型包：
 
-[jianyin_app-0.1.0-with-model.zip](https://github.com/AlexRaganhar/jianyin/releases/download/v0.1.0/jianyin_app-0.1.0-with-model.zip)（约 950 MB）
+[JianYin-0.1.0-windows-x64-with-model.zip](https://github.com/AlexRaganhar/jianyin/releases/download/v0.1.0/JianYin-0.1.0-windows-x64-with-model.zip)（约 1 GB）
 
-解压后运行 `scripts\setup.cmd`。该包已经包含 Q4 ONNX 模型，setup 会跳过模型下载；Python 依赖仍需从 PyPI 安装。压缩包不包含 `.venv`，因为它不可跨机器移植。SHA256 校验和见 Release 的 `SHA256SUMS-0.1.0.txt`。
+解压后双击 `启动笺隐.cmd` 即可。包内已经包含 `JianYin.exe`、完整的 Q4 ONNX 模型和启动器；不需要 Python，也不需要联网下载模型。SHA256 校验和见 Release 的 `SHA256SUMS-with-model-0.1.0.txt`。
+
+不含模型的 Windows/macOS 便携包仍在同一 Release 中；它们首次启动时会从 Hugging Face 下载模型。
 
 模型来自 [openai/privacy-filter](https://huggingface.co/openai/privacy-filter)，固定 revision `7ffa9a043d54d1be65afb281eddf0ffbe629385b`，Apache-2.0。
 

@@ -56,10 +56,19 @@ def _local_app_data() -> Path:
 
 
 def default_model_directory() -> Path:
+    if getattr(sys, "frozen", False):
+        return _local_app_data() / "JianYin" / "models" / MODEL_DIR_NAME
     root = project_root()
     if (root / "pyproject.toml").is_file():
         return root / "models" / MODEL_DIR_NAME
     return _local_app_data() / "JianYin" / "models" / MODEL_DIR_NAME
+
+
+def portable_model_directory() -> Path | None:
+    """Return the model directory next to a frozen executable, if any."""
+    if not getattr(sys, "frozen", False):
+        return None
+    return Path(sys.executable).resolve().parent / "models" / MODEL_DIR_NAME
 
 
 def _writable_directory(path: Path) -> bool:
@@ -103,6 +112,9 @@ def model_directory_candidates(explicit: str | Path | None = None) -> list[Path]
         configured = os.environ.get(name)
         if configured:
             values.append(Path(configured).expanduser())
+    portable = portable_model_directory()
+    if portable is not None:
+        values.append(portable)
     values.append(default_model_directory())
     return values
 
