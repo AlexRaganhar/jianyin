@@ -284,6 +284,8 @@ OCR 在 CPU 上逐页运行，通常每页 1–3 秒（取决于分辨率）。�
 
 ## 12. 目录
 
+架构边界、状态所有权和本轮删减说明见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
+
 ```text
 jianyin/
   jianyin_app/     Python 包（模型、检测、规则、文档、工作区、GUI、CLI）
