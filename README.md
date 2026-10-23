@@ -69,6 +69,15 @@ py -3.12 -m venv .venv
 
 不含模型的 Windows/macOS 便携包仍在同一 Release 中；它们首次启动时会从 Hugging Face 下载模型。
 
+### macOS 含模型便携版
+
+macOS 提供两个架构的含模型包：
+
+- Apple Silicon：[JianYin-0.1.0-macos-arm64-with-model.zip](https://github.com/AlexRaganhar/jianyin/releases/download/v0.1.0/JianYin-0.1.0-macos-arm64-with-model.zip)
+- Intel：[JianYin-0.1.0-macos-x64-with-model.zip](https://github.com/AlexRaganhar/jianyin/releases/download/v0.1.0/JianYin-0.1.0-macos-x64-with-model.zip)
+
+解压后把 `JianYin.app` 拖进「应用程序」再打开。模型已放在 `JianYin.app/Contents/MacOS/models/` 内，不需要下载。构建没有 Apple 开发者签名，首次打开请右键 →「打开」，或执行 `xattr -cr /Applications/JianYin.app`。校验和见 `SHA256SUMS-with-model-macos-arm64-0.1.0.txt` / `SHA256SUMS-with-model-macos-x64-0.1.0.txt`。
+
 模型来自 [openai/privacy-filter](https://huggingface.co/openai/privacy-filter)，固定 revision `7ffa9a043d54d1be65afb281eddf0ffbe629385b`，Apache-2.0。
 
 截至 2026-10-22 核对：Hugging Face 最新 sha 仍为 `7ffa9a043d54d1be65afb281eddf0ffbe629385b`，[GitHub 仓库](https://github.com/openai/privacy-filter) 最新提交 `f7f00ca7fb86`（2026-04-22），与本地固定 revision 一致，暂无更新。
