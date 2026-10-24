@@ -5,7 +5,8 @@
 ## 开发环境
 
 ```powershell
-cd <笺隐项目目录>
+git clone https://github.com/AlexRaganhar/jianyin.git
+cd jianyin
 .\scripts\setup.cmd -SkipModel
 .\.venv\Scripts\python.exe -m pytest -q
 .\.venv\Scripts\ruff.exe check jianyin_app tests
