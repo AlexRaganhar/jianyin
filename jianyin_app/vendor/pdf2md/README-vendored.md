@@ -1,7 +1,6 @@
 # pdf2md（笺隐内置）
 
-本目录是 [pdf-to-markdown](https://github.com/AlexRaganhar/pdf-to-markdown) 的
-内置副本，随笺隐一起分发，让扫描 PDF 在 Windows 和 macOS 上开箱即用。
+本目录是 pdf-to-markdown 的内置副本，随笺隐一起分发，让扫描 PDF 在 Windows 和 macOS 上开箱即用。
 
 上游已经按“一条流水线”重写：RapidOCR + PP-OCRv6 small ONNX、pypdfium2 渲染、
 页面级 JSON 断点、直接生成 Markdown 和逐页文本；没有 PaddlePaddle、Torch、

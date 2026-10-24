@@ -1,8 +1,5 @@
 # 笺隐 · JianYin
 
-[![CI](https://github.com/AlexRaganhar/jianyin/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexRaganhar/jianyin/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-
 > 笺纸之间，隐去姓名，留下事实。
 
 **笺隐**是一个本地运行、可审阅、可还原的案件文档脱敏工作台。它使用 OpenAI Privacy Filter 的 Q4 ONNX 模型识别文本中的敏感信息，结合可开关的中文规则补强，先生成一份可编辑的“源值 → 替换值”规则草稿，再按规则统一脱敏案件内的全部文档，输出 Markdown、可选 DOCX 和映射 JSON。
@@ -32,8 +29,7 @@
 要求：Windows 10/11 或 macOS 12+、Python 3.12、约 1 GB 磁盘用于模型。
 
 ```powershell
-git clone https://github.com/AlexRaganhar/jianyin.git
-cd jianyin
+cd <笺隐项目目录>
 .\scripts\setup.cmd
 ```
 
@@ -59,36 +55,21 @@ py -3.12 -m venv .venv
 
 如果你已经有完整 Q4 目录，也可以直接复制到项目的 `models\openai-privacy-filter-q4\`，或用 `--model-dir` 指向它。
 
-### Windows 安装包（含模型与 OCR）
+### 本地发布包（含模型与 OCR）
 
-不想安装 Python、也不想首次联网下载模型，可以直接下载 Windows 安装包：
+暂不在文档中提供外部下载链接。需要安装包、便携包或 macOS DMG 时，先运行 `scripts/build_release.py`，再按平台执行：
 
-[JianYin-0.2.0-windows-x64-setup-with-model.exe](https://github.com/AlexRaganhar/jianyin/releases/download/v0.2.0/JianYin-0.2.0-windows-x64-setup-with-model.exe)（约 0.9 GB）
+- Windows 安装包：`scripts/package_windows_installer.py`
+- Windows 便携包：`scripts/package_portable_with_model.py`
+- macOS DMG：`scripts/package_macos_dmg.py`
 
-安装包按当前用户安装到 `%LOCALAPPDATA%\Programs\JianYin`，不需要管理员权限。安装完成后从开始菜单启动「笺隐 JianYin」。
+生成前需要本地 `models/openai-privacy-filter-q4` 模型目录。
 
-### Windows 便携包（含模型与 OCR）
-
-也可以下载便携 ZIP：
-
-[JianYin-0.2.0-windows-x64-with-model.zip](https://github.com/AlexRaganhar/jianyin/releases/download/v0.2.0/JianYin-0.2.0-windows-x64-with-model.zip)
-
-解压后双击 `启动笺隐.cmd` 即可。包内已经包含 `JianYin.exe`、完整的 Q4 ONNX 模型、内置 OCR 引擎和启动器；不需要 Python，也不需要联网下载模型或 OCR 组件。
-
-### macOS DMG（含模型与 OCR）
-
-macOS 提供两个架构的 DMG：
-
-- Apple Silicon：[JianYin-0.2.0-macos-arm64-with-model.dmg](https://github.com/AlexRaganhar/jianyin/releases/download/v0.2.0/JianYin-0.2.0-macos-arm64-with-model.dmg)
-- Intel：[JianYin-0.2.0-macos-x64-with-model.dmg](https://github.com/AlexRaganhar/jianyin/releases/download/v0.2.0/JianYin-0.2.0-macos-x64-with-model.dmg)
-
-打开 DMG 后把 `JianYin.app` 拖进「应用程序」再打开。模型和 OCR 引擎已在 App 内，不需要下载。构建没有 Apple 开发者签名，首次打开请右键 →「打开」，或执行 `xattr -cr /Applications/JianYin.app`。
-
-校验和见 Release 中的 `SHA256SUMS-with-model-0.2.0.txt`。
+Windows 安装包按当前用户安装到 `%LOCALAPPDATA%\Programs\JianYin`，不需要管理员权限；便携包解压后双击 `启动笺隐.cmd`。macOS DMG 打开后把 `JianYin.app` 拖进「应用程序」；构建没有 Apple 开发者签名，首次打开请右键 →「打开」，或执行 `xattr -cr /Applications/JianYin.app`。
 
 模型来自 [openai/privacy-filter](https://huggingface.co/openai/privacy-filter)，固定 revision `7ffa9a043d54d1be65afb281eddf0ffbe629385b`，Apache-2.0。
 
-截至 2026-10-22 核对：Hugging Face 最新 sha 仍为 `7ffa9a043d54d1be65afb281eddf0ffbe629385b`，[GitHub 仓库](https://github.com/openai/privacy-filter) 最新提交 `f7f00ca7fb86`（2026-04-22），与本地固定 revision 一致，暂无更新。
+截至 2026-10-22 核对：Hugging Face 最新 sha 仍为 `7ffa9a043d54d1be65afb281eddf0ffbe629385b`，与本地固定 revision 一致，暂无更新。
 
 ## 3. 启动
 
@@ -224,7 +205,7 @@ OpenAI Privacy Filter 的标签体系主要是英文语境。笺隐额外提供�
 
 ## 8. 扫描 PDF 与 OCR
 
-扫描 PDF 使用内置的 [pdf-to-markdown](https://github.com/AlexRaganhar/pdf-to-markdown)（`jianyin_app/vendor/pdf2md`）识别，不上传外部服务，也不需要单独安装 `pdf-to-markdown`、PaddlePaddle 或 Python 环境。
+扫描 PDF 使用内置的 `pdf-to-markdown`（`jianyin_app/vendor/pdf2md`）识别，不上传外部服务，也不需要单独安装 `pdf-to-markdown`、PaddlePaddle 或 Python 环境。
 
 - OCR 引擎：RapidOCR + PP-OCRv6 small ONNX 模型（检测、识别），CPU 推理，模型随安装包分发。
 - 页面级断点：workdir 按源文件 SHA-256 生成，位于 `ocr/<哈希>/ocr.work/pages/`。取消或中断后重新导入同一文件会续跑。

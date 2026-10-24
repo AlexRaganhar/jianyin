@@ -6,7 +6,7 @@ macOS DMG 一起分发。
 
 ## 内置 OCR：pdf-to-markdown（pdf2md）
 
-- 上游项目：<https://github.com/AlexRaganhar/pdf-to-markdown>
+- 上游项目：pdf-to-markdown（作者 AlexRaganhar）
 - 版权：Copyright (c) 2026 AlexRaganhar
 - 许可：MIT License（全文见 `third_party_licenses/pdf2md-MIT.txt`）
 - 位置：`jianyin_app/vendor/pdf2md/`
