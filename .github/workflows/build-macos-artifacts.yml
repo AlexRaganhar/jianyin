@@ -1,0 +1,90 @@
+name: Build macOS DMG artifacts
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Package version, e.g. 0.2.0"
+        required: true
+        default: "0.2.0"
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    name: macOS ${{ matrix.arch }} DMG
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-15
+          - arch: x64
+            runner: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Python with Tk
+        run: |
+          brew install python@3.12 python-tk@3.12 || true
+          "$(brew --prefix python@3.12)/bin/python3.12" -c "import tkinter; print('tk', tkinter.TkVersion)"
+
+      - name: Create virtualenv
+        run: |
+          BREW_PY="$(brew --prefix python@3.12)/bin/python3.12"
+          "$BREW_PY" -m venv --system-site-packages .venv
+          .venv/bin/python -m pip install --upgrade pip
+
+      - name: Install dependencies
+        run: |
+          .venv/bin/python -m pip install -e ".[dev,download]" "pyinstaller>=6.11,<7"
+
+      - name: Tests
+        run: .venv/bin/python -m pytest -q -m "not slow"
+
+      - name: Build standalone app
+        run: .venv/bin/python scripts/build_release.py
+
+      - name: Verify frozen app (including bundled OCR)
+        run: |
+          "dist/JianYin.app/Contents/MacOS/JianYin" --self-check
+
+      - name: Download Q4 model
+        run: |
+          .venv/bin/python -m jianyin_app.cli download-model --model-dir models/openai-privacy-filter-q4
+
+      - name: Build DMG with model
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ inputs.version }}"
+          ARCH="${{ matrix.arch }}"
+          .venv/bin/python scripts/package_macos_dmg.py \
+            --app "dist/JianYin.app" \
+            --model-dir "models/openai-privacy-filter-q4" \
+            --output "JianYin-$VERSION-macos-$ARCH-with-model.dmg" \
+            --version "$VERSION" \
+            --arch "$ARCH"
+          shasum -a 256 "JianYin-$VERSION-macos-$ARCH-with-model.dmg" \
+            > "SHA256SUMS-with-model-macos-$ARCH-$VERSION.txt"
+
+      - name: Verify app inside the DMG
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ inputs.version }}"
+          DMG="JianYin-$VERSION-macos-${{ matrix.arch }}-with-model.dmg"
+          MOUNT="$(mktemp -d)"
+          hdiutil attach "$DMG" -nobrowse -readonly -mountpoint "$MOUNT"
+          trap 'hdiutil detach "$MOUNT" -quiet || true' EXIT
+          "$MOUNT/JianYin.app/Contents/MacOS/JianYin" --self-check
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.arch }}-dmg
+          if-no-files-found: error
+          path: |
+            JianYin-*-macos-${{ matrix.arch }}-with-model.dmg
+            SHA256SUMS-with-model-macos-${{ matrix.arch }}-*.txt
