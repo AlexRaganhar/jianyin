@@ -55,17 +55,22 @@ py -3.12 -m venv .venv
 
 如果你已经有完整 Q4 目录，也可以直接复制到项目的 `models\openai-privacy-filter-q4\`，或用 `--model-dir` 指向它。
 
-### 本地发布包（含模型与 OCR）
+### 下载（含模型与 OCR）
 
-暂不在文档中提供外部下载链接。需要安装包、便携包或 macOS DMG 时，先运行 `scripts/build_release.py`，再按平台执行：
+Windows 安装包（按当前用户安装，无需管理员权限）：
 
-- Windows 安装包：`scripts/package_windows_installer.py`
-- Windows 便携包：`scripts/package_portable_with_model.py`
-- macOS DMG：`scripts/package_macos_dmg.py`
+[JianYin-0.2.0-windows-x64-setup-with-model.exe](https://github.com/AlexRaganhar/jianyin/releases/download/v0.2.0/JianYin-0.2.0-windows-x64-setup-with-model.exe)（约 0.9 GB）
 
-生成前需要本地 `models/openai-privacy-filter-q4` 模型目录。
+Windows 便携包（解压后双击 `启动笺隐.cmd`）：
 
-Windows 安装包按当前用户安装到 `%LOCALAPPDATA%\Programs\JianYin`，不需要管理员权限；便携包解压后双击 `启动笺隐.cmd`。macOS DMG 打开后把 `JianYin.app` 拖进「应用程序」；构建没有 Apple 开发者签名，首次打开请右键 →「打开」，或执行 `xattr -cr /Applications/JianYin.app`。
+[JianYin-0.2.0-windows-x64-with-model.zip](https://github.com/AlexRaganhar/jianyin/releases/download/v0.2.0/JianYin-0.2.0-windows-x64-with-model.zip)
+
+macOS DMG（打开后把 `JianYin.app` 拖进「应用程序」）：
+
+- Apple Silicon：[JianYin-0.2.0-macos-arm64-with-model.dmg](https://github.com/AlexRaganhar/jianyin/releases/download/v0.2.0/JianYin-0.2.0-macos-arm64-with-model.dmg)
+- Intel：[JianYin-0.2.0-macos-x64-with-model.dmg](https://github.com/AlexRaganhar/jianyin/releases/download/v0.2.0/JianYin-0.2.0-macos-x64-with-model.dmg)
+
+macOS 构建没有 Apple 开发者签名，首次打开请右键 →「打开」，或执行 `xattr -cr /Applications/JianYin.app`。校验和见 `SHA256SUMS-with-model-0.2.0.txt`。
 
 模型来自 [openai/privacy-filter](https://huggingface.co/openai/privacy-filter)，固定 revision `7ffa9a043d54d1be65afb281eddf0ffbe629385b`，Apache-2.0。
 
